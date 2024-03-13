@@ -14,4 +14,6 @@ RUN ...
 
 CMD ["flask","run"]
 
+EXPOSE 8080
+
 # NEED TO EXPOSE PORT FROM THE CONTAINER!!!!
