@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: hello
+  name: my-pod
+spec:
+  containers:
+    - name: hello
+      image: mrbarker/python-flask-hello
