@@ -7,3 +7,6 @@ Jinja2==3.1.2
 email_validator
 WTForms~=3.1.2
 flask-wtf==1.2.1
+python-jenkins==1.8.2
+beautifulsoup4==4.12.3
+pytest==8.1.1
