@@ -1,9 +1,9 @@
 pipeline {
     agent any
-    @Library('shared-library') _
-    
+    // @Library('shared-library') _
+
     environment {
-      JIRA_URL = "https://ml-projects.atlassian.net/"
+      JIRA_URL = 'https://ml-projects.atlassian.net/'
       JIRA_CREDENTIALS = credentials('jira-jenkins')
     }
 
@@ -12,51 +12,49 @@ pipeline {
           steps {
             // Get contact app code from a GitHub repository
             git 'https://github.com/gagishmagi/flask-contacts.git'
-
+          }
         }
+
         stage('Build') {
-            steps {
-                // Run Maven on a Unix agent.
-                sh "cd flask-contacts"
-                sh "python -m venv .venv"
-                bash "source .venv/bin/activate"
-                bash "pip install -r requirments.txt"
-                bash "flask run --port 7000"
-                
-            }
+          steps {
+            // Build project on Jenkins server.
+            sh """
+            python3 -m venv .venv
+            . .venv/bin/activate
+            pip install -r requirements.txt
+            python migrations.py
+            """
+          }
         }
-        
+
         stage('Runing Tests') {
-            steps {
-                // Run Python tests with pytest for unit/integration/e2e tests.
-                sh "pytest run"
-                
-            }
-            post {
-              success {
-                // One or more steps need to be included within each condition's block.
-              }
-              failure {
-                // One or more steps need to be included within each condition's block.
-                stage('Send to Jira') {
-                  steps {
-                    // One or more steps need to be included within the steps block.
-                    jiraCreateIssue(
-                        key: "FDAP",
-                        summary: "Issue created from Jenkins",
-                        description: "Tests failed here",
-                        issueTypeName: "Bug"
-                    )
-                  }
-                }
-
-              }
-            }
+          steps {
+            // Run Python tests with pytest for unit/integration/e2e tests.
+            sh """
+            . .venv/bin/activate
+            pytest
+            """
+          }
+          // post {
+          //   success {
+          //   // One or more steps need to be included within each condition's block.
+          //   }
+          //   failure {
+          //     // One or more steps need to be included within each condition's block.
+          //     stage('Send to Jira') {
+          //       steps {
+          //         // One or more steps need to be included within the steps block.
+          //         jiraCreateIssue(
+          //                   key: 'FDAP',
+          //                   summary: 'Issue created from Jenkins',
+          //                   description: 'Tests failed here',
+          //                   issueTypeName: 'Bug'
+          //               )
+          //       }
+          //     }
+          //   }
+          // }
 
         }
-
-        
     }
 }
-
-
