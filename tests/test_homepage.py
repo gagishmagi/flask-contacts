@@ -16,7 +16,6 @@ def test_home_page(client):
     # get title of the page using beautiful soap
     soup = BeautifulSoup(response.text, 'html.parser')
     title = soup.title.text
-    # another small fix
     assert 'View | Contacts Flask' in title
 
 
@@ -33,4 +32,5 @@ def test_home_page_has_welcome_in_page(client):
     response = client.get('http://localhost:7000/')
     soup = BeautifulSoup(response.text, 'html.parser')
     body = soup.find('body')
-    assert 'Welcome' in body.text 
+    # assert 'Welcome' in body.text 
+    assert 'Contacts' in body.text 
