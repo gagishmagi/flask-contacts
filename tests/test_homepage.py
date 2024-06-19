@@ -12,11 +12,11 @@ def client():
 # test the home page if I get status 200 and the title is View | Contacts Flask
 def test_home_page(client):
     response = client.get('http://localhost:7000/')
-    assert response.status_code == 200
+    # assert response.status_code == 200
     # get title of the page using beautiful soap
-    # soup = BeautifulSoup(response.text, 'html.parser')
-    # title = soup.title.text
-    # assert 'View | Contacts Flask' in title
+    soup = BeautifulSoup(response.text, 'html.parser')
+    title = soup.title.text
+    assert 'View | Contacts Flask' in title
 
 
 # check if the home page has contacts h1
