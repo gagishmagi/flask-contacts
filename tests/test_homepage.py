@@ -32,5 +32,5 @@ def test_home_page_has_welcome_in_page(client):
     response = client.get('http://localhost:7000/')
     soup = BeautifulSoup(response.text, 'html.parser')
     body = soup.find('body')
-    # assert 'Welcome' in body.text 
-    assert 'Contacts' in body.text
+    assert 'Welcome' in body.text 
+    # assert 'Contacts' in body.text
