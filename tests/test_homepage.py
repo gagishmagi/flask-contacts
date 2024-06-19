@@ -16,7 +16,7 @@ def test_home_page(client):
     # get title of the page using beautiful soap
     soup = BeautifulSoup(response.text, 'html.parser')
     title = soup.title.text
-    # another small fix
+    # another small
     assert 'View | Contacts Flask' in title
 
 
