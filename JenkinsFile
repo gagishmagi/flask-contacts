@@ -1,6 +1,11 @@
+@Library('shared-library') _
+
 pipeline {
     agent any
-    // @Library('shared-library') _
+    environment {
+        JIRA_URL = 'https://mlprojectsweb.atlassian.net/'
+        JIRA_CREDENTIALS = credentials('jira-jenkins')
+    }
 
     stages {
         stage('Pull from github') {
@@ -13,76 +18,89 @@ pipeline {
         stage('Build') {
           steps {
             // Build project on Jenkins server.
-            sh """
+            sh '''
             python3 -m venv .venv
             . .venv/bin/activate
             pip install -r requirements.txt
             pip install pytest-html-reporter
             flask run --port 7000 &
-            """
+            '''
           }
         }
 
         stage('Runing Tests') {
           steps {
+            script {
+          try {
             // Run Python tests with pytest for unit/integration/e2e tests.
-            sh """
-            . .venv/bin/activate
-            pytest --html-report=./report.html
-            """
-            // pytest --html-report=./report.html
-            //pytest --junitxml=./test.xml
-
+            sh '''
+                    . .venv/bin/activate
+                    pytest --html-report=./report.html
+                    '''
+                // pytest --html-report=./report.html
+                //pytest --junitxml=./test.xml
+                } catch (Exception e) {
+            currentBuild.result = 'FAILURE'
+          //error("Test stage failed ${e.message}")
           }
-          // post {
-          //   success {
-          //   // One or more steps need to be included within each condition's block.
-          //   }
-          //   failure {
-          //     // One or more steps need to be included within each condition's block.
-          //     stage('Send to Jira') {
-          //       steps {
-          //         // One or more steps need to be included within the steps block.
-          //         jiraCreateIssue(
-          //                   key: 'FDAP',
-          //                   summary: 'Issue created from Jenkins',
-          //                   description: 'Tests failed here',
-          //                   issueTypeName: 'Bug'
-          //               )
-          //       }
-          //     }
-          //   }
-          // }
-
-        }
-        stage('publish report'){
-            steps {
-                publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, keepAll: false, reportDir: '', reportFiles: 'report.html', reportName: 'Contacts Report', reportTitles: '', useWrapperFileDirectly: true]) 
-        
-                // junit stdioRetention: '', testResults: 'test.xml'
-                
             }
+          }
         }
-        // stage('report to jira'){
-        //     steps{
-        //         junit (
-        //          testResults: 'test.xml',
-        //          testDataPublishers: [
-        //           jiraTestResultReporter(
-        //              configs: [
-        //               jiraStringField(fieldKey: 'summary', value: '${DEFAULT_SUMMARY}'),
-        //               jiraStringField(fieldKey: 'description', value: '${DEFAULT_DESCRIPTION}'),
-        //               jiraStringArrayField(fieldKey: 'labels', values: [jiraArrayEntry(value: 'Jenkins'), jiraArrayEntry(value:'Integration')])
-        //              ],
-        //              projectKey: 'FDAP',
-        //              issueType: '1',
-        //              autoRaiseIssue: false,
-        //              autoResolveIssue: false,
-        //              autoUnlinkIssue: false,
-        //           )
-        //          ]
-        //         )    
-        //     }
-        // }
+
+        stage('publish report') {
+      when {
+        expression { currentBuild.result == 'FAILURE' }
+      }
+      steps {
+            publishHTML(target : [allowMissing: false,
+                 alwaysLinkToLastBuild: true,
+                 keepAll: true,
+                 reportDir: '.',
+                 reportFiles: 'report.html',
+                 reportName: 'My Contacts',
+                 reportTitles: 'The Contacts'])                // junit stdioRetention: '', testResults: 'test.xml'
+      }
+        }
+
+        stage('notify the developers') {
+      when {
+        expression { currentBuild.result == 'FAILURE' }
+      }
+
+      steps {
+        // slack
+        slackSend channel: '#devops-channel',
+                username: 'Jenkins',
+                message: "The build status is ${currentBuild.currentResult}, on project ${env.JOB_NAME} find test report in this url: ${BUILD_URL}/My_20Contacts/"
+
+                // email
+                // emailext body: """The build status is ${currentBuild.currentResult}, on project ${env.JOB_NAME} find test report in this url: ${BUILD_URL}/My_20Contacts/""",
+                // subject: """You got a faild build/job ${env.JOB_NAME} - ${env.BUILD_NUMBER} from jenkins""",
+                // to: 'gagi.shmagi@gmail.com'
+
+        // JIRA
+        jiraCreateIssue(
+                    key: 'DEFP',
+                    summary: 'Issue created by Jenkins',
+                    description: """ Tests failed for ${env.JOB_NAME} - ${env.BUILD_NUMBER} and here is the the report ${BUILD_URL}/My_20Contacts/""",
+                    issueTypeName: 'Bug'
+                )
+      }
+        }
+
+        stage('deploying to server') {
+      when {
+        expression { currentBuild.result == 'SUCCESS' }
+      }
+      steps {
+        sh 'echo deploying to docker..'
+      }
+        }
+
+        stage('preparing the server') {
+      steps {
+        sh "echo 'installing the dependecies'"
+      }
+        }
     }
 }
